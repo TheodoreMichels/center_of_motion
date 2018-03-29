@@ -1,39 +1,50 @@
-// Based on:
+// Simple utility to track the center of motion from an attached video capture device.
+// Theodore Michels 2018
 
+// Based on:
 // Learning Processing
 // Daniel Shiffman
 // http://www.learningprocessing.com
 
 // Exercise 16-7: Create a sketch that looks for the average location 
-// of motion. Can you have an ellipse follow your waving hand?   
+// of motion. Can you have an ellipse follow your waving hand?
 
+/* DEPENDENCIES */
 import processing.video.*;
+
+
+/* SETTINGS */
+// How different must a pixel be to be a "motion" pixel
+float threshold = 50;
+// Linear interpolation percentage
+float smoothing = 0.1;
+
+// Resolution of tracking device
+int camWidth = 640;
+int camHeight = 360;
+
+// Output the coordinates as a percentage (0 - 1 float) of the video, rather than absolute pixels
+boolean outputPercent = true;
+
+// Is the data just being sent somewhere else?
+boolean headless = false;
+// Show the simple debug visualization
+boolean debug = true;
+// Display the camera feed?
+boolean displayVideo = true;
+
+// Global tracking variables
+float avgX = 0; // Average of motion X
+float avgY = 0; // Average of motion Y
+float lerpX = 0;
+float lerpY = 0;
 
 // Variable for capture device
 Capture video;
 // Previous Frame
 PImage prevFrame;
 
-// How different must a pixel be to be a "motion" pixel
-float threshold = 50;
-// Linear interpolation percentage
-float smoothing = 0.1;
-
-float lerpX = 0;
-float lerpY = 0;
-
-float avgX = 0;
-float avgY = 0;
-
-int camWidth = 1280;
-int camHeight = 720;
-
-// Output the coordinates as a percentage (0 - 1 float) of the video, rather than absolute pixels
-boolean outputPercent = true;
-
-boolean headless = false;
-boolean displayVideo = true;
-
+// Using settings allows the "size()" to be variable
 void settings(){
   if(headless){
     displayVideo = false;
@@ -121,6 +132,10 @@ void draw() {
   // Render the visuals
   if(!headless){
     visuals();
+    if(debug){
+      debug();
+    }
+    
   }
   
   if(outputPercent){
@@ -131,16 +146,20 @@ void draw() {
   
 }
 
-// Just to separate things a bit.
-void visuals(){
-  background(0);
-  // You don't need to display it to analyze it!
+// Visualize the motion
+void debug(){
+  
   if(displayVideo){
     image(video, 0, 0);
   }
-  
-  smooth();
-  noStroke();
+
+  stroke(0, 255, 0);
   fill(255, 0, 0);
-  ellipse(lerpX, lerpY, 16, 16);
+  ellipse(lerpX, lerpY, 20, 20);
+}
+
+void visuals(){
+  background(0);
+  
+  // Put your visuals here...
 }
