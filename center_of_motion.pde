@@ -11,9 +11,12 @@
 
 /* DEPENDENCIES */
 import processing.video.*;
-
+import netP5.*;
+import oscP5.*;
 
 /* SETTINGS */
+int broadcastPort = 14000;
+String remoteIP = "127.0.0.1";
 // How different must a pixel be to be a "motion" pixel
 float threshold = 50;
 // Linear interpolation percentage
@@ -28,6 +31,8 @@ boolean outputPercent = true;
 
 // Is the data just being sent somewhere else?
 boolean headless = false;
+// Send the data via OSC
+boolean broadcast = true;
 // Show the simple debug visualization
 boolean debug = true;
 // Display the camera feed?
@@ -39,32 +44,35 @@ float avgY = 0; // Average of motion Y
 float lerpX = 0;
 float lerpY = 0;
 
+OscP5 oscP5;
+NetAddress remoteLocation;
 // Variable for capture device
 Capture video;
 // Previous Frame
 PImage prevFrame;
 
 // Using settings allows the "size()" to be variable
-void settings(){
-  if(headless){
+void settings() {
+
+  if (headless) {
     displayVideo = false;
     size(1, 1);
-  }else{
+  } else {
     size(camWidth, camHeight);
   }
 }
 
 void setup() {
-  
+  oscP5 = new OscP5(this, 12000);
+  remoteLocation = new NetAddress(remoteIP, broadcastPort);
   printArray(Capture.list());
-  
+
   // Using the default capture device
   video = new Capture(this, camWidth, camHeight);
   video.start();
 
   // Create an empty image the same size as the video
   prevFrame = createImage(video.width, video.height, RGB);
-
 }
 
 // When a new frame is available...
@@ -72,14 +80,14 @@ void captureEvent(Capture video) {
   // Save the previous frame.
   prevFrame.copy(video, 0, 0, video.width, video.height, 0, 0, video.width, video.height);
   prevFrame.updatePixels();  
-  
+
   // Now read the next frame.
   video.read();
 }
 
 
 void draw() {
-  
+
   loadPixels();
   video.loadPixels();
   prevFrame.loadPixels();
@@ -130,26 +138,30 @@ void draw() {
   lerpY = lerp(lerpY, avgY, smoothing);
 
   // Render the visuals
-  if(!headless){
+  if (!headless) {
     visuals();
-    if(debug){
+    if (debug) {
       debug();
     }
-    
   }
-  
-  if(outputPercent){
-    println("X: " + lerpX/video.width + "% Y: " + lerpY/video.height + "%");
-  }else{
-    println("X: " + lerpX + " Y: " + lerpY);
+
+  if (broadcast) {
+    if (outputPercent) {
+      oscP5.send(new OscMessage("/x/" + lerpX/video.width), remoteLocation);
+      oscP5.send(new OscMessage("/y/" + lerpY/video.height), remoteLocation);
+      //println("X: " + lerpX/video.width + " Y: " + lerpY/video.height);
+    } else {
+      oscP5.send(new OscMessage("/x/" + lerpX), remoteLocation);
+      oscP5.send(new OscMessage("/y/" + lerpY), remoteLocation);
+      //println("X: " + lerpX + " Y: " + lerpY);
+    }
   }
-  
 }
 
 // Visualize the motion
-void debug(){
-  
-  if(displayVideo){
+void debug() {
+
+  if (displayVideo) {
     image(video, 0, 0);
   }
 
@@ -158,8 +170,8 @@ void debug(){
   ellipse(lerpX, lerpY, 20, 20);
 }
 
-void visuals(){
+void visuals() {
   background(0);
-  
+
   // Put your visuals here...
 }
